@@ -1,0 +1,1 @@
+CGO_ENABLED=1 go build -buildmode=c-archive -o build/libwhoisparser.a whoisparser.go && bindgen build/libwhoisparser.h -o src/whois_parser/ffi.rs
