@@ -9,6 +9,10 @@ Rust rewrite of https://github.com/someshkar/domainbot
 This bot isn't public as of now, but to run it on yourself, you can follow these steps:
 
 - copy `.env.example` to `.env` and add the discord token
+- install rust-bindgen
+  ```bash
+  cargo install bindgen
+  ```
 - execute `bindgen.sh`, which builds the `whoisparser` as static binary and generates rust bindings.
   ```bash
   chmod +x bindgen.sh
