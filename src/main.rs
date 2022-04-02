@@ -4,28 +4,24 @@ use serenity::async_trait;
 use serenity::client::{Client, Context, EventHandler};
 use serenity::framework::standard::{
     macros::{command, group},
-    CommandResult, StandardFramework,
+    Args, CommandResult, StandardFramework,
 };
 use serenity::model::channel::Message;
 use std::env;
-use std::error::Error;
 
 #[group]
-#[commands(ping, all, single)]
+#[default_command(single)]
+#[commands(all, single)]
 struct General;
 
 struct Handler;
 
 #[async_trait]
-impl EventHandler for Handler {
-    async fn message(&self, ctx: Context, msg: Message) {
-        println!("{:#?}", msg.content);
-    }
-}
+impl EventHandler for Handler {}
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn Error>> {
-    dotenv()?;
+async fn main() {
+    dotenv().unwrap();
 
     let discord_token = env::var("DISCORD_TOKEN").expect("DISCORD_TOKEN doesn't exist");
     let framework = StandardFramework::new()
@@ -42,33 +38,40 @@ async fn main() -> Result<(), Box<dyn Error>> {
     if let Err(why) = client.start().await {
         println!("An error occurred while running the client: {:?}", why);
     }
-
-    Ok(())
 }
 
-#[command]
-async fn ping(ctx: &Context, msg: &Message) -> CommandResult {
-    msg.reply(ctx, "pong!").await?;
-
-    Ok(())
-}
-
-#[command]
-async fn all(ctx: &Context, msg: &Message) -> CommandResult {
-    let (_, domain) = msg.content.split_once("domain all ").unwrap();
-    msg.reply(ctx, all_domains(domain).await?).await?;
-
-    Ok(())
-}
-
-#[command]
-async fn single(ctx: &Context, msg: &Message) -> CommandResult {
-    let (_, domain) = msg.content.split_once("domain single ").unwrap();
-    if !is_domain(domain) {
-        msg.reply(ctx, "Please enter a valid domain!").await?;
+fn parse_args<'a>(args: &'a Args) -> Result<&'a str, &'static str> {
+    if args.len() > 1 {
+        Err("You can only enter one domain at once!")
+    } else if let Some(domain) = args.current() {
+        Ok(domain)
     } else {
-        msg.reply(ctx, single_domain(domain).await?).await?;
+        Err("Please enter a domain!")
     }
+}
+
+#[command]
+async fn all(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
+    match parse_args(&args) {
+        Ok(domain) => msg.reply(ctx, all_domains(domain).await?).await?,
+        Err(reply) => msg.reply(ctx, reply).await?,
+    };
+
+    Ok(())
+}
+
+#[command]
+async fn single(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
+    match parse_args(&args) {
+        Ok(domain) => {
+            if !is_domain(domain) {
+                msg.reply(ctx, "Please enter a valid domain!").await?
+            } else {
+                msg.reply(ctx, single_domain(domain).await?).await?
+            }
+        }
+        Err(reply) => msg.reply(ctx, reply).await?,
+    };
 
     Ok(())
 }
