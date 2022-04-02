@@ -1,7 +1,5 @@
 mod whois_parser;
 
-use std::collections::HashMap;
-
 use futures::future::join_all;
 use lazy_static::lazy_static;
 use regex::Regex;
@@ -67,11 +65,13 @@ pub async fn all_domains(s: &str) -> Result<String, WhoIsError> {
 
 pub async fn find_available_domains(domain: &str) -> Result<Vec<String>, WhoIsError> {
     let tlds = ["com", "org", "net", "co", "io", "dev", "xyz", "tech"];
+
+    // iter fns seem to be almost as fast/ sometimes faster than imperative loop
     let available_domains =
         join_all(tlds.map(|tld| domain_available(format!("{}.{}", domain, tld))))
             .await
             .into_iter()
-            .collect::<Result<Vec<_>, WhoIsError>>()?
+            .collect::<Result<Vec<_>, _>>()?
             .into_iter()
             .flatten()
             .collect::<Vec<_>>();
