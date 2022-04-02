@@ -90,3 +90,40 @@ async fn domain_available(domain: impl AsRef<str>) -> Result<Option<String>, Who
 
     Ok(domain)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn domain_available_works() {
+        assert_eq!(
+            domain_available("mokshit.co").await.unwrap(),
+            Some(String::from("mokshit.co"))
+        );
+        assert_eq!(domain_available("mokshitjain.co").await.unwrap(), None);
+    }
+
+    #[tokio::test]
+    async fn find_available_domains_works() {
+        assert_eq!(
+            find_available_domains("mokshit").await.unwrap(),
+            vec![
+                String::from("mokshit.org"),
+                String::from("mokshit.co"),
+                String::from("mokshit.io"),
+                String::from("mokshit.dev"),
+                String::from("mokshit.xyz"),
+                String::from("mokshit.tech")
+            ]
+        )
+    }
+
+    #[test]
+    fn is_domain_works() {
+        assert_eq!(is_domain("mokshitjain.co"), true);
+        assert_eq!(is_domain("mokshit.co"), true);
+        assert_eq!(is_domain("google"), false);
+        assert_eq!(is_domain("google.com"), true);
+    }
+}
